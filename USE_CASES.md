@@ -24,10 +24,11 @@ __Endpoint__: `[POST] /users`
  it's information are saved in the Users table of the database.
 
 __Return__: The endpoint must return a _json_ object with the 
-status of the user's creation.  
-- `OK` response:
--- status code: `201 CREATED`
--- _json_ object:
+status of the user's creation. 
+
+* `OK` response:  
+    * status code: `201 CREATED`  
+    * _json_ object:
 
 ```json
 {
@@ -41,9 +42,9 @@ status of the user's creation.
 }
 ```
 
-- `Error` response:
--- status code: `400 BAD REQUEST`
--- _json_ object:
+* `Error` response:  
+    * status code: `400 BAD REQUEST`  
+    * _json_ object:
 
 ```json
 {
