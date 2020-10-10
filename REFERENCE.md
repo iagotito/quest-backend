@@ -19,15 +19,15 @@ __Required JSON__:
 __Return__: The endpoint must return a _json_ object with the
 status of the user's creation.
   
-- `OK` response:
--- condition: the email does not already exists
--- status code: `201 CREATED`
+- `OK` response:  
+-- condition: the email does not already exists  
+-- status code: `201 CREATED`  
 -- _json_ object:
   
 ```json
 {
     "status_code":  "201 CREATED",
-    "message":  "User created with sucess.",
+    "message":  "User created with success.",
     "data": {
         "email":  "user_email",
         "name":  "user_name",
@@ -36,9 +36,9 @@ status of the user's creation.
 }
 ```
   
-- `Error` response:
--- condition: the email already exists
--- status code: `400 BAD REQUEST`
+- `Error` response:  
+-- condition: the email already exists  
+-- status code: `400 BAD REQUEST`  
 -- _json_ object:
   
 ```json
