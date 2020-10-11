@@ -30,18 +30,23 @@ def get_status ():
 
 @app.route("/user", methods=["POST"])
 def post_user ():
-    req = request.get_json()
+    user_data = request.get_json()
 
-    _assert("email" in req, 400, "no email in user's info")
-    _assert("password" in req, 400, "no password in user's info")
-    _assert("name" in req, 400, "no name in user's info")
+    _assert("email" in user_data, 400, "no email in user's data")
+    _assert("password" in user_data, 400, "no password in user's data")
+    _assert("name" in user_data, 400, "no name in user's data")
 
     try:
-        new_user = create_user(req)
+        create_user(user_data)
     except AssertionError as e:
         _abort(str(e), 400)
 
-    return new_user, 201
+    res = {
+        'status_code': '201 CREATED',
+        'message': 'User created with success.',
+        'data': user_data
+    }
+    return jsonify(res), 201
 
 
 @app.after_request

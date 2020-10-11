@@ -1,49 +1,42 @@
-
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.exc import IntegrityError
 
-from sqlalchemy import Column,Integer, String, ForeignKey
+from sqlalchemy import Column, String
 
 engine = create_engine('sqlite:///serverquest/database/data.db',echo = True)
 
-def setup_bd ():
-    Base = declarative_base()
+Session = sessionmaker(bind=engine)
+session = Session()
 
-    class User(Base):
-        __tablename__ = 'users'
-        
-        email = Column(String, primary_key=True)
-        name = Column(String, nullable=False)
-        password = Column(String, nullable=False)
-        tags = relationship('Tag', backref = 'users')
-
-        def repr(self):
-            return f'User {self.name}'
-
-    class Tag(Base):
-        __tablename__ = 'tags'
-
-        name = Column(String, primary_key=True)
-        owner = Column(String, ForeignKey('users.email'), primary_key=True)
-        users = relationship('User')
-        todos = relationship('Todo', backref='tags')
-
-        def repr(self):
-            return f'Tag {self.name}'
-
-    class Todo(Base):
-        __tablename__ = 'todo'
-
-        description = Column(String, primary_key=True)
-        finished = Column(Integer, nullable=False)
-        tag = Column(String, ForeignKey('tags.name'), nullable=False)
-        tags = relationship('Tag')
-        
-        def rept(self):
-            return f'Todo {self.description}'
+Base = declarative_base()
 
 
-    Base.metadata.create_all(engine)
+class User(Base):
+    __tablename__ = 'user'
+    
+    email = Column(String, primary_key=True)
+    name = Column(String, nullable=False)
+    password = Column(String, nullable=False)
+
+    def repr(self):
+        return f'User {self.name}'
+
+    def __init__(self, email, name, password):
+        self.email = email
+        self.name = name
+        self.password = password
 
 
+Base.metadata.create_all(engine)
+
+
+def insert_user (email, name, password):
+    user = User(email=email, name=name, password=password)
+    session.add(user)
+    try:
+        session.commit()
+    except IntegrityError:
+        return False
+    return True
