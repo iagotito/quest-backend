@@ -6,6 +6,7 @@ from flask import abort
 
 from . controller import create_user
 from . controller import get_jwt
+from . controller import get_user_data
 
 app = Flask(__name__)
 
@@ -33,9 +34,9 @@ def get_status ():
 def post_user ():
     user_data = request.get_json()
 
-    _assert("email" in user_data, 400, "no email in user's data")
-    _assert("password" in user_data, 400, "no password in user's data")
-    _assert("name" in user_data, 400, "no name in user's data")
+    _assert("email" in user_data, 400, "No email in user's data.")
+    _assert("password" in user_data, 400, "No password in user's data.")
+    _assert("name" in user_data, 400, "No name in user's data.")
 
     try:
         create_user(user_data)
@@ -43,7 +44,7 @@ def post_user ():
         _abort(str(e), 400)
 
     res = {
-        'status_code': '201 CREATED',
+        'status_code': 201,
         'message': 'User created with success.',
         'data': { 'user_data': user_data }
     }
@@ -63,11 +64,32 @@ def login():
         _abort(str(e), 401)
     
     res = {
-        'status_code': '200 OK',
+        'status_code': 200,
         'message': 'Login authorized.',
         'data': { 'jwt': jwt }
     }
+    return jsonify(res), 200
 
+
+@app.route('/auth/user', methods=['GET'])
+def get_user():
+    _assert('Authorization' in request.headers, 401, 'Missing Authorization header.')
+
+    jwt = request.headers.get('Authorization')
+
+    try:
+        user_data = get_user_data(jwt)
+    except AssertionError as e:
+        if str(e) == 'Signature expired.':
+            _abort(str(e), 401)
+        else:
+            _abort(str(e), 400)
+    
+    res = {
+        'status_code': 200,
+        'message': 'User authorized.',
+        'data': { 'user_data': user_data }
+    }
     return jsonify(res), 200
 
 
@@ -78,4 +100,3 @@ def after_request(response):
                          'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
     return response
-
