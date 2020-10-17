@@ -5,6 +5,7 @@ from flask import make_response
 from flask import abort
 
 from . controller import create_user
+from . controller import get_jwt
 
 app = Flask(__name__)
 
@@ -28,7 +29,7 @@ def get_status ():
     return jsonify({"status": "running"}), 200
 
 
-@app.route("/user", methods=["POST"])
+@app.route("/users", methods=["POST"])
 def post_user ():
     user_data = request.get_json()
 
@@ -44,9 +45,30 @@ def post_user ():
     res = {
         'status_code': '201 CREATED',
         'message': 'User created with success.',
-        'data': user_data
+        'data': { 'user_data': user_data }
     }
     return jsonify(res), 201
+
+
+@app.route('/auth/login', methods=['POST'])
+def login():
+    user_data = request.get_json()
+
+    _assert('email' in user_data, 400, "No email in user's data.")
+    _assert("password" in user_data, 400, "No password in user's data.")
+
+    try:
+        jwt = get_jwt(user_data)
+    except AssertionError as e:
+        _abort(str(e), 401)
+    
+    res = {
+        'status_code': '200 OK',
+        'message': 'Login authorized.',
+        'data': { 'jwt': jwt }
+    }
+
+    return jsonify(res), 200
 
 
 @app.after_request
