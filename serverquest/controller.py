@@ -23,9 +23,12 @@ def get_user_data(jwt):
 def get_jwt(user_data):
     email = user_data.get('email')
     password = user_data.get('password')
+    assert email, 'Email is empty.'
+    assert password, 'Password is empty.'
 
     user = get_user(email)
 
+    assert user, 'Email not found.'
     assert password == user.password, 'Wrong password.'
 
     return user.encode_auth_token(user.email)
