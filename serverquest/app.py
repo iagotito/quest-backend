@@ -8,6 +8,7 @@ from . controller import create_user
 from . controller import get_jwt
 from . controller import get_user_data
 from . controller import create_tag
+from . controller import get_user_tags
 
 app = Flask(__name__)
 
@@ -113,6 +114,28 @@ def post_tag():
         'data': { 'tag_repr': tag }
     }
     return jsonify(res), 201
+
+
+@app.route('/auth/tags', methods=['GET'])
+def get_tags():
+    _assert('Authorization' in request.headers, 401, 'Missing Authorization header.')
+    jwt = request.headers.get('Authorization')
+
+    try:
+        tags = get_user_tags(jwt)
+    except AssertionError as e:
+        _abort(str(e), 400)
+
+    res = {
+        'status_code': 200,
+        'message': f'{len(tags)} tags returned.',
+        'data': {
+            'tags': tags,
+            'num_tags': len(tags)
+            }
+    }
+
+    return jsonify(res), 200
 
 
 @app.after_request

@@ -15,7 +15,7 @@ session = Session()
 Base = declarative_base()
 
 SECRET_KEY = 'super-duper-secret-key'
-TOKEN_EXPIRATION_TIME = 1 #60*60*24*30
+TOKEN_EXPIRATION_TIME = 60*60*24*30
 
 
 class Tag(Base):
@@ -109,3 +109,9 @@ def insert_tag(email, tag_name):
         session.rollback()
         return None
     return tag.repr()
+
+
+def get_tags(email):
+    user = User.find_by_email(session, email)
+    tags = user.tags
+    return tags
