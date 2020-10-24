@@ -78,6 +78,7 @@ def insert_user (email, name, password):
     try:
         session.commit()
     except IntegrityError:
+        session.rollback()
         return False
     return True
 

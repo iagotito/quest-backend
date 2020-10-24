@@ -1,4 +1,8 @@
+import os
 from urllib.parse import urlparse
+
+if not os.path.exists('serverquest/database'):
+    os.mkdir('serverquest/database')
 
 from . app import app
 
