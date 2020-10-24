@@ -7,6 +7,7 @@ from flask import abort
 from . controller import create_user
 from . controller import get_jwt
 from . controller import get_user_data
+from . controller import create_tag
 
 app = Flask(__name__)
 
@@ -39,14 +40,14 @@ def post_user ():
     _assert("name" in user_data, 400, "No name in user's data.")
 
     try:
-        create_user(user_data)
+        user_repr = create_user(user_data)
     except AssertionError as e:
         _abort(str(e), 400)
 
     res = {
         'status_code': 201,
         'message': 'User created with success.',
-        'data': { 'user_data': user_data }
+        'data': { 'user_repr': user_repr }
     }
     return jsonify(res), 201
 
@@ -71,14 +72,14 @@ def login():
     return jsonify(res), 200
 
 
-@app.route('/auth/user', methods=['GET'])
+@app.route('/auth/users', methods=['GET'])
 def get_user():
     _assert('Authorization' in request.headers, 401, 'Missing Authorization header.')
 
     jwt = request.headers.get('Authorization')
-
+    
     try:
-        user_data = get_user_data(jwt)
+        user_repr = get_user_data(jwt)
     except AssertionError as e:
         if str(e) == 'Signature expired.':
             _abort(str(e), 401)
@@ -88,9 +89,30 @@ def get_user():
     res = {
         'status_code': 200,
         'message': 'User authorized.',
-        'data': { 'user_data': user_data }
+        'data': { 'user_data': user_repr }
     }
     return jsonify(res), 200
+
+
+@app.route('/auth/tags', methods=['POST'])
+def post_tag():
+    _assert('Authorization' in request.headers, 401, 'Missing Authorization header.')
+    jwt = request.headers.get('Authorization')
+
+    tag_data = request.get_json()
+    _assert('tag_name' in tag_data, 400, "No name in tag's data")
+
+    try:
+        tag = create_tag(jwt, tag_data)
+    except AssertionError as e:
+        _abort(str(e), 400)
+    
+    res = {
+        'status_code': 200,
+        'message': 'Tag created.',
+        'data': { 'tag_repr': tag }
+    }
+    return jsonify(res), 201
 
 
 @app.after_request

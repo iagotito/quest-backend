@@ -2,11 +2,10 @@ import datetime
 
 import jwt
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import IntegrityError
-
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, ForeignKey
 
 engine = create_engine('sqlite:///serverquest/database/data.db', echo = True)
 
@@ -16,6 +15,19 @@ session = Session()
 Base = declarative_base()
 
 SECRET_KEY = 'super-duper-secret-key'
+TOKEN_EXPIRATION_TIME = 1 #60*60*24*30
+
+
+class Tag(Base):
+    __tablename__ = 'tag'
+    
+    name = Column(String, primary_key=True)
+    owner = Column(String, ForeignKey('user.email'), primary_key=True,)
+    user = relationship('User')
+
+
+    def repr(self):
+        return f'Name: {self.name}; Owner: {self.owner};'
 
 
 class User(Base):
@@ -24,6 +36,7 @@ class User(Base):
     email = Column(String, primary_key=True)
     name = Column(String, nullable=False)
     password = Column(String, nullable=False)
+    tags = relationship(Tag, backref='users')
 
 
     def repr(self):
@@ -44,7 +57,7 @@ class User(Base):
     def encode_auth_token(self, user_email):
         try:
             payload = {
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=60),
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=TOKEN_EXPIRATION_TIME),
                 'iat': datetime.datetime.utcnow(),
                 'sub': user_email
             }
@@ -79,9 +92,20 @@ def insert_user (email, name, password):
         session.commit()
     except IntegrityError:
         session.rollback()
-        return False
-    return True
+        return None
+    return user.repr()
 
 
 def get_user(email):
     return User.find_by_email(session, email)
+    
+
+def insert_tag(email, tag_name):
+    tag = Tag(name=tag_name, owner=email)
+    session.add(tag)
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        return None
+    return tag.repr()
