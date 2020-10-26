@@ -1,7 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 
 from . connect2db import session
-from . models import User, Tag
+from . models import User, Tag, Todo
 
 
 def insert_user (email, name, password):
@@ -34,3 +34,14 @@ def get_tags(email):
     user = User.find_by_email(session, email)
     tags = user.tags
     return tags
+
+
+def insert_todo(description, deadline, tag_name, email):
+    todo = Todo(description=description, deadline=deadline, tag_name=tag_name, owner_email=email)
+    session.add(todo)
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        return None
+    return todo.repr()

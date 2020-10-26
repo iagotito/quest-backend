@@ -3,6 +3,8 @@ from . alchemy import insert_user
 from . alchemy import get_user
 from . alchemy import insert_tag
 from . alchemy import get_tags
+from . alchemy import insert_todo
+from . util import get_user_email
 
 def create_user(user_data):
     user_repr = insert_user(email=user_data.get('email'), name=user_data.get('name'), password=user_data.get('password'))
@@ -11,10 +13,7 @@ def create_user(user_data):
 
 
 def get_user_data(jwt):
-    user_email = User.decode_auth_token(jwt)
-    
-    assert user_email != 'Signature expired.', 'Signature expired.'
-    assert user_email != 'Invalid token.', 'Invalid token.'
+    user_email = get_user_email(kwt)
 
     user = get_user(user_email)
 
@@ -38,12 +37,9 @@ def get_jwt(user_data):
 
 
 def create_tag(jwt, tag_data):
-    user_email = User.decode_auth_token(jwt)
-    
-    assert user_email != 'Signature expired.', 'Signature expired.'
-    assert user_email != 'Invalid token.', 'Invalid token.'
-
+    user_email = get_user_email(jwt)
     tag_name = tag_data.get('tag_name')
+
     tag = insert_tag(user_email, tag_name)
 
     assert tag is not None, f'Tag {tag_name} already exists for the user {user_email}'
@@ -52,11 +48,26 @@ def create_tag(jwt, tag_data):
 
 
 def get_user_tags(jwt):
-    user_email = User.decode_auth_token(jwt)
-    
-    assert user_email != 'Signature expired.', 'Signature expired.'
-    assert user_email != 'Invalid token.', 'Invalid token.'
+    user_email = get_user_email(jwt)
 
     tags = get_tags(user_email)
 
     return [tag.name for tag in tags]
+
+
+def create_todo(jwt, tag_name, todo_info):
+    assert todo_info.get('description') != '', 'Descriptin is empty.'
+    if 'deadline' in todo_info:
+        assert todo_info.get('deadline') != '', 'Deadline is provided but is empty.'
+    else:
+        todo_info['deadline'] = '-'
+
+    user_email = get_user_email(jwt)
+    user_tags = get_user_tags(jwt)
+    assert tag_name in user_tags, f"User '{user_email}' don't have a tag named '{tag_name}'"
+
+    todo = insert_todo(todo_info.get('description'), todo_info.get('deadline'), tag_name, user_email)
+
+    assert todo is not None, 'Error in todo creation: todo already exists, but the id should be new to each todo.'
+
+    return todo

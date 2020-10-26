@@ -9,8 +9,21 @@ from . controller import get_jwt
 from . controller import get_user_data
 from . controller import create_tag
 from . controller import get_user_tags
+from . controller import create_todo
 
 app = Flask(__name__)
+
+
+def _make_response(message, status_code, data=None):
+    res = {
+        'message': message,
+        'status_code': status_code,
+    }
+
+    if data is not None:
+        res['data'] = data
+    
+    return jsonify(res), status_code
 
 
 def _assert(condition, status_code, message):
@@ -23,7 +36,7 @@ def _assert(condition, status_code, message):
     abort(response)
 
 
-def _abort(status_code, message, data=None):
+def _abort(status_code, message):
     _assert(False, message, status_code)
 
 
@@ -45,12 +58,9 @@ def post_user ():
     except AssertionError as e:
         _abort(str(e), 400)
 
-    res = {
-        'status_code': 201,
-        'message': 'User created with success.',
-        'data': { 'user_repr': user_repr }
-    }
-    return jsonify(res), 201
+    data = { 'user_repr': user_repr }
+
+    return _make_response('User created with success.', 201, data)
 
 
 @app.route('/auth/login', methods=['POST'])
@@ -65,12 +75,8 @@ def login():
     except AssertionError as e:
         _abort(str(e), 401)
     
-    res = {
-        'status_code': 200,
-        'message': 'Login authorized.',
-        'data': { 'jwt': jwt }
-    }
-    return jsonify(res), 200
+    data = { 'jwt': jwt }
+    return _make_response('Loguin authorized.', 200, data)
 
 
 @app.route('/auth/users', methods=['GET'])
@@ -87,12 +93,10 @@ def get_user():
         else:
             _abort(str(e), 400)
     
-    res = {
-        'status_code': 200,
-        'message': 'User authorized.',
-        'data': { 'user_data': user_repr }
-    }
-    return jsonify(res), 200
+
+    data = { 'user_data': user_repr }
+
+    return _make_response('User authorized.', 200, data)
 
 
 @app.route('/auth/tags', methods=['POST'])
@@ -108,12 +112,9 @@ def post_tag():
     except AssertionError as e:
         _abort(str(e), 400)
     
-    res = {
-        'status_code': 200,
-        'message': 'Tag created.',
-        'data': { 'tag_repr': tag }
-    }
-    return jsonify(res), 201
+    data = { 'tag_repr': tag }
+    
+    return _make_response('Tag created.', 201, data)
 
 
 @app.route('/auth/tags', methods=['GET'])
@@ -126,16 +127,37 @@ def get_tags():
     except AssertionError as e:
         _abort(str(e), 400)
 
-    res = {
-        'status_code': 200,
-        'message': f'{len(tags)} tags returned.',
-        'data': {
-            'tags': tags,
-            'num_tags': len(tags)
-            }
+    data = {
+        'tags': tags,
+        'num_tags': len(tags)
     }
 
-    return jsonify(res), 200
+    return _make_response(f'{len(tags)} tags returned.', 200, data)
+
+
+@app.route('/auth/tag/<tag_name>/todos', methods=['POST'])
+def post_todo(tag_name):
+    _assert('Authorization' in request.headers, 401, 'Missing Authorization header.')
+    jwt = request.headers.get('Authorization')
+
+    _assert(tag_name, 400, 'Tag name cannot be empty string.')
+
+    todo_info = request.get_json()
+    _assert('description' in todo_info, 400, "Missing 'description' field in todo_info.")
+
+    try:
+        todo = create_todo(jwt, tag_name, todo_info)
+    except AssertionError as e:
+        if str(e) == 'Signature expired.':
+            _abort(str(e), 401)
+        else:
+            _abort(str(e), 400)
+
+    data = {
+        'todo': todo
+    }
+    
+    return _make_response('Todo created', 201, data)
 
 
 @app.after_request
