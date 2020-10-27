@@ -10,6 +10,7 @@ from . controller import get_user_data
 from . controller import create_tag
 from . controller import get_user_tags
 from . controller import create_todo
+from . controller import get_user_todos
 
 app = Flask(__name__)
 
@@ -17,7 +18,7 @@ app = Flask(__name__)
 def _make_response(message, status_code, data=None):
     res = {
         'message': message,
-        'status_code': status_code,
+        'status_code': status_code
     }
 
     if data is not None:
@@ -158,6 +159,28 @@ def post_todo(tag_name):
     }
     
     return _make_response('Todo created', 201, data)
+
+
+@app.route('/auth/tag/<tag_name>/todos', methods=['GET'])
+def get_todos(tag_name):
+    _assert('Authorization' in request.headers, 401, 'Missing Authorization header.')
+    jwt = request.headers.get('Authorization')
+
+    _assert(tag_name, 400, 'Tag name cannot be empty string.')
+
+    try:
+        todos = get_user_todos(jwt, tag_name)
+    except AssertionError as e:
+        if str(e) == 'Signature expired.':
+            _abort(str(e), 401)
+        else:
+            _abort(str(e), 400)
+
+    data = {
+        'todos': todos,
+        'num_todos': len(todos)
+    }
+    return _make_response(f'{len(todos)} todo returned.', 200, data)
 
 
 @app.after_request

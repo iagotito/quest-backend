@@ -4,6 +4,7 @@ from . alchemy import get_user
 from . alchemy import insert_tag
 from . alchemy import get_tags
 from . alchemy import insert_todo
+from . alchemy import get_todos
 from . util import get_user_email
 
 def create_user(user_data):
@@ -71,3 +72,13 @@ def create_todo(jwt, tag_name, todo_info):
     assert todo is not None, 'Error in todo creation: todo already exists, but the id should be new to each todo.'
 
     return todo
+
+
+def get_user_todos(jwt, tag_name):
+    user_email = get_user_email(jwt)
+    user_tags = get_user_tags(jwt)
+    assert tag_name in user_tags, f"User '{user_email}' don't have a tag named '{tag_name}'"
+
+    todos = get_todos(user_email, tag_name)
+
+    return [todo.to_dict() for todo in todos]

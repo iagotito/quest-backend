@@ -33,6 +33,10 @@ class Todo(Base):
         self.tag_name = tag_name
         self.owner_email = owner_email
 
+    
+    def to_dict(self):
+        return {k: vars(self).get(k) for k in vars(self) if k != '_sa_instance_state'}
+
 
     def repr(self):
         return f'TODO: {self.description}; ID: {self.id}; Deadline: {self.deadline}; Done: {"True" if self.done == 1 else "False"}; Tag: {self.tag_name}; Owner: {self.owner_email};'
@@ -42,7 +46,7 @@ class Tag(Base):
     __tablename__ = 'tag'
     
     name = Column(String, primary_key=True)
-    owner = Column(String, ForeignKey('user.email'), primary_key=True,)
+    owner = Column(String, ForeignKey('user.email'), primary_key=True)
     user = relationship('User')
     todos = relationship(Todo, backref='tags')
 
