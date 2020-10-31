@@ -54,9 +54,9 @@ def insert_todo(description, deadline, tag_name, email):
     return todo.repr()
 
 
-def get_todos(email, tag_name):
+def get_todos(email, tag_name, done):
     tag = get_tag(tag_name, email)
 
     assert tag is not None, f"User {email} don't have tag {tag_name}."
 
-    return tag.todos
+    return session.query(Todo).filter_by(owner_email=email, tag_name=tag_name, done=int(done))

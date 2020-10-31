@@ -74,11 +74,11 @@ def create_todo(jwt, tag_name, todo_info):
     return todo
 
 
-def get_user_todos(jwt, tag_name):
+def get_user_todos(jwt, tag_name, done=None):
     user_email = get_user_email(jwt)
     user_tags = get_user_tags(jwt)
     assert tag_name in user_tags, f"User '{user_email}' don't have a tag named '{tag_name}'"
 
-    todos = get_todos(user_email, tag_name)
+    todos = get_todos(user_email, tag_name, done)
 
     return [todo.to_dict() for todo in todos]

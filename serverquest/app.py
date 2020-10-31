@@ -142,6 +142,7 @@ def post_todo(tag_name):
     jwt = request.headers.get('Authorization')
 
     _assert(tag_name, 400, 'Tag name cannot be empty string.')
+    tag_name = tag_name.replace('-', ' ')
 
     todo_info = request.get_json()
     _assert('description' in todo_info, 400, "Missing 'description' field in todo_info.")
@@ -159,7 +160,7 @@ def post_todo(tag_name):
     }
     
     return _make_response('Todo created', 201, data)
-
+ 
 
 @app.route('/auth/tag/<tag_name>/todos', methods=['GET'])
 def get_todos(tag_name):
@@ -168,8 +169,14 @@ def get_todos(tag_name):
 
     _assert(tag_name, 400, 'Tag name cannot be empty string.')
 
+    done = request.args.get('done')
+    if done:
+        if done == 'True': done = True
+        elif done == 'False': done = False
+        _assert(type(done) is bool, 400, 'Done must be boolean.')
+
     try:
-        todos = get_user_todos(jwt, tag_name)
+        todos = get_user_todos(jwt, tag_name, done)
     except AssertionError as e:
         if str(e) == 'Signature expired.':
             _abort(str(e), 401)
