@@ -54,9 +54,27 @@ def insert_todo(description, deadline, tag_name, email):
     return todo.repr()
 
 
-def get_todos(email, tag_name, done):
+def get_todos(email, tag_name, done=None):
     tag = get_tag(tag_name, email)
 
     assert tag is not None, f"User {email} don't have tag {tag_name}."
 
-    return session.query(Todo).filter_by(owner_email=email, tag_name=tag_name, done=int(done))
+    if done is not None:
+        return session.query(Todo).filter_by(owner_email=email, tag_name=tag_name, done=int(done)).all()
+
+    return tag.todos
+
+def get_todo(todo_id):
+    todo = session.query(Todo).filter_by(id=todo_id).first()
+    assert todo, f'Todo {todo_id} not found.'
+    return todo
+
+
+def todo_mark_as(todo_id, mark_as):
+    todo = get_todo(todo_id)
+
+    todo.done = mark_as
+
+    session.commit()
+
+    return todo.repr()

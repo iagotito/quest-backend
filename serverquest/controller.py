@@ -5,6 +5,7 @@ from . alchemy import insert_tag
 from . alchemy import get_tags
 from . alchemy import insert_todo
 from . alchemy import get_todos
+from . alchemy import todo_mark_as
 from . util import get_user_email
 
 def create_user(user_data):
@@ -82,3 +83,11 @@ def get_user_todos(jwt, tag_name, done=None):
     todos = get_todos(user_email, tag_name, done)
 
     return [todo.to_dict() for todo in todos]
+
+
+def update_todo_done(jwt, tag_name, todo_id, mark_as):
+    user_email = get_user_email(jwt)
+    user_tags = get_user_tags(jwt)
+    assert tag_name in user_tags, f"User '{user_email}' don't have a tag named '{tag_name}'"
+
+    todo = todo_mark_as(todo_id, mark_as)

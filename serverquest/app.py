@@ -11,6 +11,7 @@ from . controller import create_tag
 from . controller import get_user_tags
 from . controller import create_todo
 from . controller import get_user_todos
+from . controller import update_todo_done
 
 app = Flask(__name__)
 
@@ -168,11 +169,12 @@ def get_todos(tag_name):
     jwt = request.headers.get('Authorization')
 
     _assert(tag_name, 400, 'Tag name cannot be empty string.')
+    tag_name = tag_name.replace('-', ' ')
 
     done = request.args.get('done')
     if done:
-        if done == 'True': done = True
-        elif done == 'False': done = False
+        if done.lower() == 'true': done = True
+        elif done.lower() == 'false': done = False
         _assert(type(done) is bool, 400, 'Done must be boolean.')
 
     try:
@@ -187,7 +189,39 @@ def get_todos(tag_name):
         'todos': todos,
         'num_todos': len(todos)
     }
+    if done is not None:
+        data['query'] = f'done={done}'
     return _make_response(f'{len(todos)} todo returned.', 200, data)
+
+
+@app.route('/auth/tag/<tag_name>/todo/<todo_id>', methods=['PATCH'])
+def patch_todo(tag_name, todo_id):
+    _assert('Authorization' in request.headers, 401, 'Missing Authorization header.')
+    jwt = request.headers.get('Authorization')
+
+    _assert(tag_name, 400, 'Tag name cannot be empty string.')
+    tag_name = tag_name.replace('-', ' ')
+
+    _assert((type(todo_id) is int or todo_id.isdigit()) and int(todo_id) >= 1, 400, 'Todo ID must be an integer greater than zero.')
+
+    mark_as = request.args.get('mark_as')
+    _assert(mark_as, 400, 'Missing mark_as argument.')
+    if mark_as.lower() == 'true': mark_as = True
+    elif mark_as.lower() == 'talse': mark_as = False
+    _assert(type(mark_as) is bool, 400, 'mark_as must be boolean.')
+
+    try:
+        patched_todo = update_todo_done(jwt, tag_name, todo_id, mark_as)
+    except AssertionError as e:
+        if str(e) == 'Signature expired.':
+            _abort(str(e), 401)
+        else:
+            _abort(str(e), 400)
+
+    data = {
+        'patched_todo': patched_todo
+    }
+    return _make_response(f'Todo {todo_id} done marked as {mark_as}', 200, data)
 
 
 @app.after_request
